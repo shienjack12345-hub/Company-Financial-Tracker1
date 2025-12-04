@@ -1,0 +1,1692 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Business Financial Tracker</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- Chart.js for pie chart -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root {
+      /* Light theme (creamy yellow) */
+      --bg-main: #fff8e6;
+      --bg-card: #fff3cc;
+      --bg-header: #ffe8aa;
+      --text-main: #2f2a24;
+      --text-muted: #6b6052;
+      --accent: #f0b429;
+      --accent-soft: #ffe1a8;
+      --border-soft: #f3d8a6;
+      --danger: #d9534f;
+      --success: #5cb85c;
+    }
+
+    body.dark-mode {
+      --bg-main: #1f1a15;
+      --bg-card: #2a221b;
+      --bg-header: #3b2f23;
+      --text-main: #f7eddc;
+      --text-muted: #c6b59a;
+      --accent: #f0b429;
+      --accent-soft: #5c4627;
+      --border-soft: #4a3b2a;
+      --danger: #ff6b6b;
+      --success: #7cd992;
+    }
+
+    * {
+      box-sizing: border-box;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+        sans-serif;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg-main);
+      color: var(--text-main);
+    }
+
+    header {
+      background: var(--bg-header);
+      border-bottom: 1px solid var(--border-soft);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.75rem 1.2rem;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      font-weight: 700;
+      font-size: 1.1rem;
+      white-space: nowrap;
+    }
+
+    .brand-logo {
+      width: 32px;
+      height: 32px;
+      border-radius: 999px;
+      background: radial-gradient(circle at 30% 30%, #ffffff, #f0b429);
+      border: 2px solid rgba(0, 0, 0, 0.08);
+      flex-shrink: 0;
+    }
+
+    /* ===== NAV + HAMBURGER ===== */
+    nav {
+      display: flex;
+      flex-wrap: nowrap;
+      gap: 0.35rem;
+      overflow-x: auto;
+      scrollbar-width: thin;
+    }
+
+    nav::-webkit-scrollbar {
+      height: 4px;
+    }
+    nav::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    nav::-webkit-scrollbar-thumb {
+      background: rgba(0, 0, 0, 0.15);
+      border-radius: 999px;
+    }
+
+    nav button {
+      border: none;
+      padding: 0.45rem 0.8rem;
+      border-radius: 999px;
+      background: transparent;
+      color: var(--text-main);
+      cursor: pointer;
+      font-size: 0.85rem;
+      border: 1px solid transparent;
+      transition: background 0.15s ease, border 0.15s ease, transform 0.1s ease;
+      flex: 0 0 auto;
+      white-space: nowrap;
+    }
+
+    nav button:hover {
+      background: var(--accent-soft);
+      border-color: var(--border-soft);
+      transform: translateY(-1px);
+    }
+
+    nav button.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #2f2415;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      flex-shrink: 0;
+      margin-left: 0.5rem;
+    }
+
+    .mode-toggle-label {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      white-space: nowrap;
+    }
+
+    .toggle-switch {
+      position: relative;
+      display: inline-block;
+      width: 44px;
+      height: 22px;
+      flex-shrink: 0;
+    }
+
+    .toggle-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      inset: 0;
+      background-color: #d7c19a;
+      border-radius: 999px;
+      transition: 0.2s;
+    }
+
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 16px;
+      width: 16px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      border-radius: 50%;
+      transition: 0.2s;
+    }
+
+    .toggle-switch input:checked + .slider {
+      background-color: #3b3125;
+    }
+
+    .toggle-switch input:checked + .slider:before {
+      transform: translateX(20px);
+    }
+
+    /* Hamburger button */
+    .menu-toggle {
+      border: none;
+      background: transparent;
+      font-size: 1.4rem;
+      line-height: 1;
+      cursor: pointer;
+      padding: 0.1rem 0.4rem;
+      border-radius: 999px;
+      display: none; /* desktop 隐藏 */
+    }
+
+    .menu-toggle:active {
+      background: rgba(0, 0, 0, 0.08);
+    }
+
+    main {
+      max-width: 1100px;
+      margin: 1.25rem auto 2rem;
+      padding: 0 1rem;
+    }
+
+    .page {
+      display: none;
+    }
+
+    .page.active {
+      display: block;
+    }
+
+    .card {
+      background: var(--bg-card);
+      border-radius: 14px;
+      padding: 1.1rem 1.2rem;
+      border: 1px solid var(--border-soft);
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+      margin-bottom: 1rem;
+    }
+
+    h1, h2, h3 {
+      margin: 0 0 0.75rem;
+    }
+
+    h1 {
+      font-size: 1.6rem;
+    }
+
+    h2 {
+      font-size: 1.3rem;
+    }
+
+    h3 {
+      font-size: 1.1rem;
+    }
+
+    p {
+      margin: 0.2rem 0 0.4rem;
+    }
+
+    .muted {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
+
+    .btn {
+      border: none;
+      padding: 0.5rem 0.9rem;
+      border-radius: 999px;
+      background: var(--accent);
+      color: #2f2415;
+      font-size: 0.9rem;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      transition: background 0.15s ease, transform 0.1s ease, box-shadow 0.1s ease;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    }
+
+    .btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 3px 6px rgba(0, 0, 0, 0.12);
+    }
+
+    .btn-secondary {
+      background: transparent;
+      border: 1px solid var(--border-soft);
+      color: var(--text-main);
+      box-shadow: none;
+    }
+
+    .btn-danger {
+      background: var(--danger);
+      color: #fff;
+    }
+
+    .btn-success {
+      background: var(--success);
+      color: #fff;
+    }
+
+    .btn-sm {
+      padding: 0.3rem 0.6rem;
+      font-size: 0.8rem;
+      border-radius: 999px;
+    }
+
+    .btn-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-top: 0.5rem;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 0.9rem;
+    }
+
+    .stat {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+
+    .stat-label {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .stat-value {
+      font-size: 1.2rem;
+      font-weight: 700;
+    }
+
+    .stat-tag {
+      font-size: 0.8rem;
+      padding: 0.15rem 0.4rem;
+      border-radius: 999px;
+      background: rgba(0, 0, 0, 0.06);
+      display: inline-block;
+      margin-top: 0.15rem;
+    }
+
+    .progress-bar {
+      background: rgba(255, 255, 255, 0.5);
+      border-radius: 999px;
+      height: 8px;
+      overflow: hidden;
+      margin-top: 0.2rem;
+    }
+
+    .progress-bar-inner {
+      height: 100%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #f0b429, #ff914d);
+      width: 0%;
+    }
+
+    form {
+      display: grid;
+      gap: 0.7rem;
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 0.7rem;
+    }
+
+    label {
+      font-size: 0.85rem;
+      font-weight: 600;
+      margin-bottom: 0.2rem;
+      display: inline-block;
+    }
+
+    input[type="text"],
+    input[type="number"],
+    input[type="date"],
+    select,
+    input[type="month"] {
+      width: 100%;
+      padding: 0.45rem 0.55rem;
+      border-radius: 10px;
+      border: 1px solid var(--border-soft);
+      background: rgba(255, 255, 255, 0.6);
+      font-size: 0.9rem;
+      color: var(--text-main);
+    }
+
+    input[type="text"]:focus,
+    input[type="number"]:focus,
+    input[type="date"]:focus,
+    select:focus,
+    input[type="month"]:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px rgba(240, 180, 41, 0.25);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.88rem;
+    }
+
+    th, td {
+      padding: 0.5rem;
+      text-align: left;
+      border-bottom: 1px solid var(--border-soft);
+    }
+
+    th {
+      background: rgba(255, 255, 255, 0.35);
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+    }
+
+    tr:nth-child(even) td {
+      background: rgba(255, 255, 255, 0.25);
+    }
+
+    .tag {
+      display: inline-block;
+      padding: 0.15rem 0.45rem;
+      border-radius: 999px;
+      font-size: 0.75rem;
+    }
+
+    .tag-pending {
+      background: rgba(240, 180, 41, 0.2);
+      color: #8a5b00;
+    }
+
+    .tag-approved {
+      background: rgba(92, 184, 92, 0.2);
+      color: #155724;
+    }
+
+    .tag-rejected {
+      background: rgba(217, 83, 79, 0.2);
+      color: #7b1111;
+    }
+
+    .filters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.6rem;
+      margin-bottom: 0.8rem;
+      align-items: center;
+    }
+
+    .filters select,
+    .filters input[type="month"] {
+      max-width: 180px;
+    }
+
+    .pill {
+      font-size: 0.8rem;
+      padding: 0.25rem 0.6rem;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.5);
+      border: 1px dashed var(--border-soft);
+      display: inline-block;
+      margin-top: 0.3rem;
+    }
+
+    .alert-text {
+      font-size: 0.85rem;
+      margin-top: 0.3rem;
+    }
+
+    .alert-danger {
+      color: var(--danger);
+    }
+
+    .alert-warning {
+      color: #d98b00;
+    }
+
+    .chip-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      margin-top: 0.4rem;
+    }
+
+    .chip {
+      font-size: 0.78rem;
+      padding: 0.2rem 0.6rem;
+      border-radius: 999px;
+      border: 1px solid var(--border-soft);
+      background: rgba(255, 255, 255, 0.6);
+    }
+
+    canvas {
+      max-width: 100%;
+    }
+
+    .landing-hero {
+      text-align: center;
+      padding: 2rem 0.5rem 2.2rem;
+    }
+
+    .landing-title {
+      font-size: 2rem;
+      margin-bottom: 0.4rem;
+    }
+
+    .landing-subtitle {
+      font-size: 0.98rem;
+      color: var(--text-muted);
+      max-width: 480px;
+      margin: 0 auto 1.3rem;
+    }
+
+    .landing-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      background: rgba(255, 255, 255, 0.6);
+      border-radius: 999px;
+      padding: 0.2rem 0.7rem;
+      border: 1px dashed var(--border-soft);
+      font-size: 0.8rem;
+      margin-bottom: 0.9rem;
+    }
+
+    .landing-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 0.8rem;
+      margin-top: 1.3rem;
+    }
+
+    .text-right {
+      text-align: right;
+    }
+
+    /* ====== Mobile Layout for header / nav / hamburger ====== */
+    @media (max-width: 800px) {
+      header {
+        padding: 0.55rem 0.7rem;
+        gap: 0.4rem;
+      }
+
+      .brand span {
+        font-size: 0.9rem;
+      }
+
+      .menu-toggle {
+        display: inline-flex;
+      }
+
+      /* nav 默认隐藏，点汉堡后显示 */
+      nav {
+        display: none;
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: var(--bg-header);
+        padding: 0.4rem 0.7rem 0.6rem;
+        flex-wrap: wrap;
+        max-height: 60vh;
+        overflow-y: auto;
+        border-bottom: 1px solid var(--border-soft);
+      }
+
+      body.nav-open nav {
+        display: flex;
+        flex-direction: column;
+        gap: 0.35rem;
+      }
+
+      nav button {
+        font-size: 0.8rem;
+        padding: 0.35rem 0.7rem;
+      }
+
+      .header-right {
+        margin-left: auto;
+      }
+
+      .mode-toggle-label {
+        display: none; /* 手机上可以隐藏文字，只留开关减少空间 */
+      }
+    }
+  </style>
+</head>
+<body>
+<header>
+  <div class="brand">
+    <div class="brand-logo"></div>
+    <span>BizFinance Tracker</span>
+  </div>
+
+  <!-- 汉堡按钮（小屏显示） -->
+  <button class="menu-toggle" id="menu-toggle" aria-label="Toggle navigation">
+    ☰
+  </button>
+
+  <nav>
+    <button class="nav-btn active" data-target="landing-page">Home</button>
+    <button class="nav-btn" data-target="dashboard-page">Dashboard</button>
+    <button class="nav-btn" data-target="add-expense-page">Add Expense</button>
+    <button class="nav-btn" data-target="expense-list-page">Expenses</button>
+    <button class="nav-btn" data-target="budget-page">Budgets</button>
+    <button class="nav-btn" data-target="approvals-page">Approvals</button>
+    <button class="nav-btn" data-target="summary-page">Summary</button>
+    <button class="nav-btn" data-target="ai-page">AI Insights</button>
+    <button class="nav-btn" data-target="settings-page">Settings</button>
+  </nav>
+
+  <div class="header-right">
+    <span class="mode-toggle-label">Light / Dark</span>
+    <label class="toggle-switch">
+      <input type="checkbox" id="theme-toggle" />
+      <span class="slider"></span>
+    </label>
+  </div>
+</header>
+
+<main>
+  <!-- 1. Landing Page -->
+  <section id="landing-page" class="page active">
+    <div class="card landing-hero">
+      <div class="landing-badge">
+        🧾 Smart company expense & budget tracker
+      </div>
+      <h1 class="landing-title">Control your company spending with ease.</h1>
+      <p class="landing-subtitle">
+        Track expenses, manage budgets, approve claims, and view financial
+        summaries – all in one creamy, calming interface.
+      </p>
+      <button class="btn" id="get-started-btn">Get Started</button>
+
+      <div class="landing-grid">
+        <div class="card">
+          <h3>Real-time Dashboard</h3>
+          <p class="muted">
+            See total company expenses, budget usage, and top spending categories
+            for the current month.
+          </p>
+        </div>
+        <div class="card">
+          <h3>Approval Workflow</h3>
+          <p class="muted">
+            Employees submit expenses, managers approve or reject with a click.
+          </p>
+        </div>
+        <div class="card">
+          <h3>Smart Summary & Reports</h3>
+          <p class="muted">
+            Visualize spending with a dynamic pie chart and exportable summaries.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2. Dashboard -->
+  <section id="dashboard-page" class="page">
+    <div class="card">
+      <h1>Dashboard</h1>
+      <p class="muted">High-level overview of your company finances.</p>
+      <div class="grid-2">
+        <div class="card">
+          <div class="stat">
+            <span class="stat-label">This Month's Expenses</span>
+            <span class="stat-value" id="dash-total-expenses">$0.00</span>
+            <span class="stat-tag" id="dash-month-label"></span>
+          </div>
+        </div>
+        <div class="card">
+          <div class="stat">
+            <span class="stat-label">Overall Budget Utilization</span>
+            <span class="stat-value" id="dash-budget-util">0%</span>
+            <div class="progress-bar">
+              <div class="progress-bar-inner" id="dash-budget-progress"></div>
+            </div>
+            <p class="alert-text alert-warning" id="dash-budget-alert"></p>
+          </div>
+        </div>
+        <div class="card">
+          <div class="stat">
+            <span class="stat-label">Top Spending Category</span>
+            <span class="stat-value" id="dash-top-category">–</span>
+            <span class="muted" id="dash-top-category-amount"></span>
+          </div>
+        </div>
+        <div class="card">
+          <h3>Quick Actions</h3>
+          <div class="btn-group">
+            <button class="btn btn-sm" data-goto="add-expense-page">➕ Add Expense</button>
+            <button class="btn btn-sm btn-secondary" data-goto="expense-list-page">📋 View Expenses</button>
+            <button class="btn btn-sm btn-secondary" data-goto="budget-page">📊 Manage Budgets</button>
+            <button class="btn btn-sm btn-secondary" data-goto="summary-page">🥧 Summary & Pie Chart</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. Add Expense -->
+  <section id="add-expense-page" class="page">
+    <div class="card">
+      <h1>Add Expense</h1>
+      <p class="muted">Record business-related expenses quickly.</p>
+      <form id="expense-form">
+        <div class="form-row">
+          <div>
+            <label for="expense-desc">Expense Description</label>
+            <input type="text" id="expense-desc" required placeholder="e.g. Office internet bill" />
+          </div>
+          <div>
+            <label for="expense-amount">Amount (USD)</label>
+            <input type="number" step="0.01" id="expense-amount" required />
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div>
+            <label for="expense-category">Category</label>
+            <select id="expense-category" required>
+              <option value="">Select category</option>
+              <option>Utilities</option>
+              <option>Fuel</option>
+              <option>Materials</option>
+              <option>Salary</option>
+              <option>Maintenance</option>
+              <option>Marketing</option>
+              <option>Others</option>
+            </select>
+          </div>
+          <div>
+            <label for="expense-dept">Department / Project</label>
+            <input type="text" id="expense-dept" placeholder="e.g. Marketing, Project A" />
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div>
+            <label for="expense-date">Expense Date</label>
+            <input type="date" id="expense-date" required />
+          </div>
+        </div>
+
+        <div class="btn-group">
+          <button type="submit" class="btn">💾 Save Expense</button>
+          <button type="button" class="btn btn-secondary" id="clear-expense-btn">
+            Clear Fields
+          </button>
+          <button type="button" class="btn btn-secondary" data-goto="dashboard-page">
+            ⬅ Back to Dashboard
+          </button>
+        </div>
+      </form>
+    </div>
+  </section>
+
+  <!-- 4. Expense List -->
+  <section id="expense-list-page" class="page">
+    <div class="card">
+      <h1>All Expenses</h1>
+      <p class="muted">View and filter all recorded company expenses.</p>
+      <div class="filters">
+        <div>
+          <label for="filter-category">Category</label><br />
+          <select id="filter-category">
+            <option value="">All</option>
+            <option>Utilities</option>
+            <option>Fuel</option>
+            <option>Materials</option>
+            <option>Salary</option>
+            <option>Maintenance</option>
+            <option>Marketing</option>
+            <option>Others</option>
+          </select>
+        </div>
+        <div>
+          <label for="filter-dept">Department / Project</label><br />
+          <input type="text" id="filter-dept" placeholder="Type to filter..." />
+        </div>
+        <div>
+          <label for="filter-status">Status</label><br />
+          <select id="filter-status">
+            <option value="">All</option>
+            <option>Pending</option>
+            <option>Approved</option>
+            <option>Rejected</option>
+          </select>
+        </div>
+      </div>
+      <div style="overflow-x:auto;">
+        <table>
+          <thead>
+          <tr>
+            <th>Description</th>
+            <th>Amount</th>
+            <th>Category</th>
+            <th>Department / Project</th>
+            <th>Date</th>
+            <th>Status</th>
+          </tr>
+          </thead>
+          <tbody id="expenses-table-body">
+          <!-- Filled by JS -->
+          </tbody>
+        </table>
+      </div>
+      <div class="btn-group" style="margin-top:0.7rem;">
+        <button class="btn btn-danger btn-sm" id="delete-all-expenses-btn">
+          🗑 Delete All Expenses
+        </button>
+        <button class="btn btn-secondary btn-sm" data-goto="dashboard-page">⬅ Back</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5. Budget Management -->
+  <section id="budget-page" class="page">
+    <div class="card">
+      <h1>Budget Management</h1>
+      <p class="muted">
+        Set, track, and manage departmental or project budgets.<br />
+        👉 If you save a budget for the same Department + Period again, the
+        amount will <strong>add on (stack)</strong>.
+      </p>
+      <form id="budget-form">
+        <div class="form-row">
+          <div>
+            <label for="budget-dept">Department / Project Name</label>
+            <input type="text" id="budget-dept" required placeholder="e.g. Marketing, Project A" />
+          </div>
+          <div>
+            <label for="budget-amount">Budget Amount (USD)</label>
+            <input type="number" step="0.01" id="budget-amount" required />
+          </div>
+          <div>
+            <label for="budget-period">Period</label>
+            <select id="budget-period" required>
+              <option value="">Select period</option>
+              <option>Monthly</option>
+              <option>Quarterly</option>
+            </select>
+          </div>
+        </div>
+        <div class="btn-group">
+          <button type="submit" class="btn btn-sm">💾 Save Budget</button>
+          <button type="button" class="btn btn-secondary btn-sm" data-goto="dashboard-page">
+            ⬅ Back
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <div class="card">
+      <h2>Existing Budgets</h2>
+      <div style="overflow-x:auto;">
+        <table>
+          <thead>
+          <tr>
+            <th>Department / Project</th>
+            <th>Period</th>
+            <th>Budget</th>
+            <th>Used (all expenses)</th>
+            <th>Utilization</th>
+          </tr>
+          </thead>
+          <tbody id="budgets-table-body">
+          <!-- Filled by JS -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- 6. Approvals -->
+  <section id="approvals-page" class="page">
+    <div class="card">
+      <h1>Approval Workflow</h1>
+      <p class="muted">Review and approve or reject company expenses.</p>
+      <div class="chip-row">
+        <span class="chip">Pending expenses will appear here.</span>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Pending Expenses</h2>
+      <div style="overflow-x:auto;">
+        <table>
+          <thead>
+          <tr>
+            <th>Description</th>
+            <th>Amount</th>
+            <th>Category</th>
+            <th>Department</th>
+            <th>Date</th>
+            <th>Actions</th>
+          </tr>
+          </thead>
+          <tbody id="approvals-table-body">
+          <!-- Filled by JS -->
+          </tbody>
+        </table>
+      </div>
+      <div class="text-right" style="margin-top:0.6rem;">
+        <button class="btn btn-secondary btn-sm" data-goto="dashboard-page">
+          ⬅ Back
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 7. Summary & Pie Chart -->
+  <section id="summary-page" class="page">
+    <div class="card">
+      <h1>Summary & Pie Chart</h1>
+      <p class="muted">
+        Overview of all expenses by category with a visual pie chart.
+      </p>
+      <div class="filters">
+        <div>
+          <label for="summary-month">Filter by month (optional)</label><br />
+          <input type="month" id="summary-month" />
+        </div>
+        <button class="btn btn-sm" id="summary-refresh-btn">🔄 Refresh Summary</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Expense by Category</h2>
+      <p class="muted" id="summary-text">
+        This chart shows total expenses grouped by category.
+      </p>
+      <canvas id="summary-pie-chart" height="140"></canvas>
+      <p class="muted pill" id="summary-total"></p>
+    </div>
+  </section>
+
+  <!-- 8. AI Insights -->
+  <section id="ai-page" class="page">
+    <div class="card">
+      <h1>AI Insights (Simple Local Rules)</h1>
+      <p class="muted">
+        This is a mock AI insights page using simple rules based on your
+        expenses and budgets.
+      </p>
+      <div id="ai-insights-content">
+        <!-- Filled by JS -->
+      </div>
+      <div class="btn-group">
+        <button class="btn btn-sm" id="ai-refresh-btn">🔍 Refresh Insights</button>
+        <button class="btn btn-secondary btn-sm" data-goto="dashboard-page">
+          ⬅ Back
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 9. Settings -->
+  <section id="settings-page" class="page">
+    <div class="card">
+      <h1>Settings</h1>
+      <p class="muted">
+        Basic settings for this demo. In a real app, this would include user
+        profile, company info, etc.
+      </p>
+      <div class="grid-2">
+        <div class="card">
+          <h3>Theme</h3>
+          <p class="muted">
+            Toggle light / dark mode from the header. Your choice is saved in
+            this browser.
+          </p>
+        </div>
+        <div class="card">
+          <h3>Data</h3>
+          <p class="muted">
+            All expenses and budgets are stored locally using
+            <code>localStorage</code>.
+          </p>
+          <button class="btn btn-danger btn-sm" id="reset-all-data-btn">
+            🔄 Reset All Data
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<script>
+  // ======= Global State =======
+  let expenses = [];
+  let budgets = [];
+  let summaryChart = null;
+
+  // ======= Utility Functions =======
+  function saveToStorage() {
+    localStorage.setItem("bf_expenses", JSON.stringify(expenses));
+    localStorage.setItem("bf_budgets", JSON.stringify(budgets));
+  }
+
+  function loadFromStorage() {
+    try {
+      const e = JSON.parse(localStorage.getItem("bf_expenses") || "[]");
+      const b = JSON.parse(localStorage.getItem("bf_budgets") || "[]");
+      expenses = Array.isArray(e) ? e : [];
+      budgets = Array.isArray(b) ? b : [];
+    } catch (err) {
+      expenses = [];
+      budgets = [];
+    }
+  }
+
+  function formatCurrency(value) {
+    const num = Number(value) || 0;
+    return "$" + num.toFixed(2);
+  }
+
+  function generateId() {
+    return "id_" + Math.random().toString(36).slice(2) + Date.now().toString(36);
+  }
+
+  function getCurrentMonthLabel() {
+    const now = new Date();
+    return now.toLocaleString("default", { month: "long", year: "numeric" });
+  }
+
+  function isSameMonth(dateStr, year, month) {
+    const d = new Date(dateStr);
+    return d.getFullYear() === year && d.getMonth() === month;
+  }
+
+  // ======= Theme Handling =======
+  function initTheme() {
+    const saved = localStorage.getItem("bf_theme") || "light";
+    const toggle = document.getElementById("theme-toggle");
+    if (saved === "dark") {
+      document.body.classList.add("dark-mode");
+      toggle.checked = true;
+    } else {
+      document.body.classList.remove("dark-mode");
+      toggle.checked = false;
+    }
+    toggle.addEventListener("change", () => {
+      if (toggle.checked) {
+        document.body.classList.add("dark-mode");
+        localStorage.setItem("bf_theme", "dark");
+      } else {
+        document.body.classList.remove("dark-mode");
+        localStorage.setItem("bf_theme", "light");
+      }
+    });
+  }
+
+  // ======= Navigation =======
+  function showPage(pageId) {
+    document.querySelectorAll(".page").forEach((p) => p.classList.remove("active"));
+    const page = document.getElementById(pageId);
+    if (page) page.classList.add("active");
+
+    document.querySelectorAll(".nav-btn").forEach((btn) => {
+      btn.classList.toggle("active", btn.dataset.target === pageId);
+    });
+
+    // 关闭汉堡菜单（在手机上）
+    document.body.classList.remove("nav-open");
+
+    // Refresh certain views on navigation
+    if (pageId === "dashboard-page") {
+      updateDashboard();
+    } else if (pageId === "expense-list-page") {
+      renderExpensesTable();
+    } else if (pageId === "budget-page") {
+      updateBudgetsUsedAmounts();
+      renderBudgetsTable();
+    } else if (pageId === "approvals-page") {
+      renderApprovalsTable();
+    } else if (pageId === "summary-page") {
+      renderSummaryChart();
+    } else if (pageId === "ai-page") {
+      renderAIInsights();
+    }
+  }
+
+  function initNavigation() {
+    document.querySelectorAll(".nav-btn").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const target = btn.dataset.target;
+        if (target) showPage(target);
+      });
+    });
+
+    document.querySelectorAll("[data-goto]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const target = btn.dataset.goto;
+        if (target) showPage(target);
+      });
+    });
+
+    document.getElementById("get-started-btn").addEventListener("click", () => {
+      showPage("dashboard-page");
+    });
+
+    // 汉堡菜单开关
+    const menuToggle = document.getElementById("menu-toggle");
+    menuToggle.addEventListener("click", () => {
+      document.body.classList.toggle("nav-open");
+    });
+  }
+
+  // ======= Dashboard =======
+  function updateDashboard() {
+    // 先更新 budgets 使用量
+    updateBudgetsUsedAmounts();
+
+    const dashTotal = document.getElementById("dash-total-expenses");
+    const dashMonthLabel = document.getElementById("dash-month-label");
+    const dashBudgetUtil = document.getElementById("dash-budget-util");
+    const dashBudgetProgress = document.getElementById("dash-budget-progress");
+    const dashBudgetAlert = document.getElementById("dash-budget-alert");
+    const dashTopCategory = document.getElementById("dash-top-category");
+    const dashTopCategoryAmount = document.getElementById("dash-top-category-amount");
+
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth();
+
+    const monthlyExpenses = expenses.filter((e) =>
+      isSameMonth(e.date, currentYear, currentMonth)
+    );
+    const totalMonthly = monthlyExpenses.reduce(
+      (sum, e) => sum + (Number(e.amount) || 0),
+      0
+    );
+
+    dashTotal.textContent = formatCurrency(totalMonthly);
+    dashMonthLabel.textContent = getCurrentMonthLabel();
+
+    // Top category
+    const catTotals = {};
+    monthlyExpenses.forEach((e) => {
+      if (!catTotals[e.category]) catTotals[e.category] = 0;
+      catTotals[e.category] += Number(e.amount) || 0;
+    });
+    let topCat = "–";
+    let topCatAmount = 0;
+    Object.entries(catTotals).forEach(([cat, sum]) => {
+      if (sum > topCatAmount) {
+        topCatAmount = sum;
+        topCat = cat;
+      }
+    });
+    dashTopCategory.textContent = topCat;
+    dashTopCategoryAmount.textContent =
+      topCat === "–" ? "" : `Total: ${formatCurrency(topCatAmount)}`;
+
+    // Budget utilization (总预算 vs 总已用)
+    const totalBudget = budgets.reduce(
+      (sum, b) => sum + (Number(b.amount) || 0),
+      0
+    );
+    const totalUsed = budgets.reduce(
+      (sum, b) => sum + (Number(b.usedAmount) || 0),
+      0
+    );
+
+    let util = 0;
+    if (totalBudget > 0) util = (totalUsed / totalBudget) * 100;
+
+    const utilRounded = Math.round(util);
+    dashBudgetUtil.textContent = `${utilRounded}%`;
+    dashBudgetProgress.style.width = `${Math.min(utilRounded, 100)}%`;
+
+    if (totalBudget === 0) {
+      dashBudgetAlert.textContent = "No budgets set yet.";
+    } else if (util > 100) {
+      dashBudgetAlert.textContent =
+        "⚠️ You have exceeded the total allocated budgets!";
+    } else if (util > 80) {
+      dashBudgetAlert.textContent =
+        "🔶 Budget usage is above 80%. Monitor carefully.";
+    } else {
+      dashBudgetAlert.textContent = "";
+    }
+  }
+
+  // ======= Add Expense =======
+  function initExpenseForm() {
+    const form = document.getElementById("expense-form");
+    const clearBtn = document.getElementById("clear-expense-btn");
+    const dateInput = document.getElementById("expense-date");
+
+    if (!dateInput.value) {
+      const todayStr = new Date().toISOString().split("T")[0];
+      dateInput.value = todayStr;
+    }
+
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const desc = document.getElementById("expense-desc").value.trim();
+      const amount = parseFloat(
+        document.getElementById("expense-amount").value
+      );
+      const category = document.getElementById("expense-category").value;
+      const deptRaw = document.getElementById("expense-dept").value.trim();
+      const dept = deptRaw || "General";
+      const date = document.getElementById("expense-date").value;
+
+      if (!desc || !amount || !category || !date) {
+        alert("Please fill in all required fields.");
+        return;
+      }
+
+      const expense = {
+        id: generateId(),
+        description: desc,
+        amount: amount,
+        category: category,
+        department: dept,
+        date: date,
+        approvalStatus: "Pending",
+      };
+      expenses.push(expense);
+      saveToStorage();
+
+      // 每次加 expense 后直接更新所有画面
+      updateDashboard();
+      renderExpensesTable();
+      renderApprovalsTable();
+      renderSummaryChart();
+
+      alert("Expense saved as Pending.");
+      form.reset();
+      const todayStr2 = new Date().toISOString().split("T")[0];
+      document.getElementById("expense-date").value = todayStr2;
+    });
+
+    clearBtn.addEventListener("click", () => {
+      form.reset();
+      const todayStr2 = new Date().toISOString().split("T")[0];
+      document.getElementById("expense-date").value = todayStr2;
+    });
+  }
+
+  // ======= Expense List =======
+  function renderExpensesTable() {
+    const tbody = document.getElementById("expenses-table-body");
+    const catFilter = document.getElementById("filter-category").value;
+    const deptFilter = document
+      .getElementById("filter-dept")
+      .value.trim()
+      .toLowerCase();
+    const statusFilter = document.getElementById("filter-status").value;
+
+    tbody.innerHTML = "";
+    if (!expenses.length) {
+      tbody.innerHTML =
+        '<tr><td colspan="6">No expenses recorded yet.</td></tr>';
+      return;
+    }
+
+    expenses
+      .filter((e) => {
+        if (catFilter && e.category !== catFilter) return false;
+        if (statusFilter && e.approvalStatus !== statusFilter) return false;
+        if (
+          deptFilter &&
+          !e.department.toLowerCase().includes(deptFilter)
+        )
+          return false;
+        return true;
+      })
+      .forEach((e) => {
+        const tr = document.createElement("tr");
+        const statusTagClass =
+          e.approvalStatus === "Approved"
+            ? "tag-approved"
+            : e.approvalStatus === "Rejected"
+            ? "tag-rejected"
+            : "tag-pending";
+
+        tr.innerHTML = `
+          <td>${e.description}</td>
+          <td>${formatCurrency(e.amount)}</td>
+          <td>${e.category}</td>
+          <td>${e.department}</td>
+          <td>${e.date}</td>
+          <td><span class="tag ${statusTagClass}">${e.approvalStatus}</span></td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+    if (!tbody.children.length) {
+      tbody.innerHTML =
+        '<tr><td colspan="6">No expenses match the current filters.</td></tr>';
+    }
+  }
+
+  function initExpenseFilters() {
+    document
+      .getElementById("filter-category")
+      .addEventListener("change", renderExpensesTable);
+    document
+      .getElementById("filter-status")
+      .addEventListener("change", renderExpensesTable);
+    document
+      .getElementById("filter-dept")
+      .addEventListener("input", renderExpensesTable);
+
+    document
+      .getElementById("delete-all-expenses-btn")
+      .addEventListener("click", () => {
+        if (!confirm("Delete all expenses? This cannot be undone.")) return;
+        expenses = [];
+        saveToStorage();
+        updateBudgetsUsedAmounts();
+        renderExpensesTable();
+        renderApprovalsTable();
+        renderSummaryChart();
+        updateDashboard();
+      });
+  }
+
+  // ======= Budget Management =======
+  // 计算每个 department 已使用的总额（所有 expenses 都算）
+  function updateBudgetsUsedAmounts() {
+    const deptUsedMap = {};
+    expenses.forEach((e) => {
+      const dept = e.department || "General";
+      const amount = Number(e.amount) || 0;
+      deptUsedMap[dept] = (deptUsedMap[dept] || 0) + amount;
+    });
+
+    budgets.forEach((b) => {
+      b.usedAmount = deptUsedMap[b.department] || 0;
+    });
+
+    saveToStorage();
+  }
+
+  function renderBudgetsTable() {
+    const tbody = document.getElementById("budgets-table-body");
+    tbody.innerHTML = "";
+
+    if (!budgets.length) {
+      tbody.innerHTML = '<tr><td colspan="5">No budgets set yet.</td></tr>';
+      return;
+    }
+
+    budgets.forEach((b) => {
+      const used = Number(b.usedAmount) || 0;
+      const total = Number(b.amount) || 0;
+      const util = total > 0 ? Math.round((used / total) * 100) : 0;
+
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${b.department}</td>
+        <td>${b.period}</td>
+        <td>${formatCurrency(total)}</td>
+        <td>${formatCurrency(used)}</td>
+        <td>${util}%</td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  function initBudgetForm() {
+    const form = document.getElementById("budget-form");
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const deptRaw = document.getElementById("budget-dept").value.trim();
+      const dept = deptRaw || "General";
+      const amount = parseFloat(
+        document.getElementById("budget-amount").value
+      );
+      const period = document.getElementById("budget-period").value;
+      if (!dept || !amount || !period) {
+        alert("Please fill in all budget fields.");
+        return;
+      }
+
+      // 如果同一个 department + period 已经存在，就叠加金额（stack）
+      let existing = budgets.find(
+        (b) => b.department === dept && b.period === period
+      );
+      if (existing) {
+        existing.amount = (Number(existing.amount) || 0) + amount;
+      } else {
+        existing = {
+          id: generateId(),
+          department: dept,
+          amount: amount,
+          period: period,
+          usedAmount: 0,
+        };
+        budgets.push(existing);
+      }
+
+      updateBudgetsUsedAmounts();
+      saveToStorage();
+      renderBudgetsTable();
+      updateDashboard();
+      alert("Budget saved (stacked if same department & period).");
+      form.reset();
+    });
+  }
+
+  // ======= Approvals =======
+  function renderApprovalsTable() {
+    const tbody = document.getElementById("approvals-table-body");
+    tbody.innerHTML = "";
+
+    const pending = expenses.filter((e) => e.approvalStatus === "Pending");
+    if (!pending.length) {
+      tbody.innerHTML = '<tr><td colspan="6">No pending expenses.</td></tr>';
+      return;
+    }
+
+    pending.forEach((e) => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${e.description}</td>
+        <td>${formatCurrency(e.amount)}</td>
+        <td>${e.category}</td>
+        <td>${e.department}</td>
+        <td>${e.date}</td>
+        <td>
+          <button class="btn btn-success btn-sm" data-action="approve" data-id="${e.id}">Approve</button>
+          <button class="btn btn-danger btn-sm" data-action="reject" data-id="${e.id}">Reject</button>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  function initApprovals() {
+    const tbody = document.getElementById("approvals-table-body");
+    tbody.addEventListener("click", (e) => {
+      const btn = e.target.closest("button[data-action]");
+      if (!btn) return;
+      const action = btn.dataset.action;
+      const id = btn.dataset.id;
+      const exp = expenses.find((x) => x.id === id);
+      if (!exp) return;
+
+      if (action === "approve") {
+        exp.approvalStatus = "Approved";
+      } else if (action === "reject") {
+        exp.approvalStatus = "Rejected";
+      }
+      saveToStorage();
+      updateBudgetsUsedAmounts();
+      renderApprovalsTable();
+      renderExpensesTable();
+      renderSummaryChart();
+      updateDashboard();
+    });
+  }
+
+  // ======= Summary & Pie Chart =======
+  function renderSummaryChart() {
+    const monthInput = document.getElementById("summary-month");
+    const summaryText = document.getElementById("summary-text");
+    const summaryTotal = document.getElementById("summary-total");
+
+    const ctx = document.getElementById("summary-pie-chart").getContext("2d");
+
+    // Filter by month if selected
+    let filtered = [...expenses];
+    if (monthInput.value) {
+      const [yearStr, monthStr] = monthInput.value.split("-");
+      const y = parseInt(yearStr, 10);
+      const m = parseInt(monthStr, 10) - 1;
+      filtered = expenses.filter((e) => isSameMonth(e.date, y, m));
+      const labelDate = new Date(y, m, 1);
+      const labelText = labelDate.toLocaleString("default", {
+        month: "long",
+        year: "numeric",
+      });
+      summaryText.textContent =
+        "This chart shows total expenses grouped by category for " + labelText + ".";
+    } else {
+      summaryText.textContent =
+        "This chart shows total expenses grouped by category (all time).";
+    }
+
+    const catTotals = {};
+    filtered.forEach((e) => {
+      if (!catTotals[e.category]) catTotals[e.category] = 0;
+      catTotals[e.category] += Number(e.amount) || 0;
+    });
+
+    const labels = Object.keys(catTotals);
+    const data = Object.values(catTotals);
+
+    const totalAll = data.reduce((sum, v) => sum + v, 0);
+    summaryTotal.textContent = `Total displayed: ${formatCurrency(totalAll)}`;
+
+    if (summaryChart) {
+      summaryChart.destroy();
+    }
+
+    if (!labels.length) {
+      summaryChart = new Chart(ctx, {
+        type: "pie",
+        data: {
+          labels: ["No data"],
+          datasets: [
+            {
+              data: [1],
+            },
+          ],
+        },
+        options: {
+          plugins: {
+            legend: {
+              labels: {
+                color: getComputedStyle(document.body).getPropertyValue(
+                  "--text-main"
+                ),
+              },
+            },
+          },
+        },
+      });
+      return;
+    }
+
+    summaryChart = new Chart(ctx, {
+      type: "pie",
+      data: {
+        labels: labels,
+        datasets: [
+          {
+            data: data,
+          },
+        ],
+      },
+      options: {
+        plugins: {
+          legend: {
+            position: "bottom",
+            labels: {
+              color: getComputedStyle(document.body).getPropertyValue(
+                "--text-main"
+              ),
+            },
+          },
+        },
+      },
+    });
+  }
+
+  function initSummaryPage() {
+    document
+      .getElementById("summary-refresh-btn")
+      .addEventListener("click", renderSummaryChart);
+  }
+
+  // ======= AI Insights (simple logic) =======
+  function renderAIInsights() {
+    const container = document.getElementById("ai-insights-content");
+    container.innerHTML = "";
+
+    if (!expenses.length) {
+      container.innerHTML =
+        "<p>No expenses found. Add some expenses to see insights.</p>";
+      return;
+    }
+
+    // 1. Highest spending category overall
+    const catTotals = {};
+    expenses.forEach((e) => {
+      if (!catTotals[e.category]) catTotals[e.category] = 0;
+      catTotals[e.category] += Number(e.amount) || 0;
+    });
+    let topCat = null;
+    let topCatAmount = 0;
+    Object.entries(catTotals).forEach(([cat, sum]) => {
+      if (sum > topCatAmount) {
+        topCatAmount = sum;
+        topCat = cat;
+      }
+    });
+
+    // 2. Check overspent budgets (based on all expenses)
+    updateBudgetsUsedAmounts();
+    const overspent = budgets.filter(
+      (b) => Number(b.usedAmount) > Number(b.amount)
+    );
+
+    // 3. Simple suggestion about frequent "Others"
+    const othersCount = expenses.filter((e) => e.category === "Others").length;
+
+    const html = [];
+    html.push('<div class="card">');
+    html.push("<h3>Key Insights</h3>");
+
+    if (topCat) {
+      html.push(
+        `<p>• Your highest spending category is <strong>${topCat}</strong> with a total of <strong>${formatCurrency(
+          topCatAmount
+        )}</strong>.</p>`
+      );
+    }
+
+    if (overspent.length) {
+      html.push(
+        `<p class="alert-text alert-danger">• ${overspent.length} department(s) appear to be overspending their budgets (based on all recorded expenses):</p>`
+      );
+      html.push("<ul>");
+      overspent.forEach((b) => {
+        const diff = Number(b.usedAmount) - Number(b.amount);
+        html.push(
+          `<li><strong>${b.department}</strong>: exceeded by ${formatCurrency(
+            diff
+          )}</li>`
+        );
+      });
+      html.push("</ul>");
+    } else if (budgets.length) {
+      html.push(
+        `<p class="alert-text alert-warning">• All departments are currently within their budget limits.</p>`
+      );
+    } else {
+      html.push(
+        `<p class="muted">• No budgets defined yet. Add budgets to unlock more insights.</p>`
+      );
+    }
+
+    if (othersCount >= 5) {
+      html.push(
+        `<p>• You have many expenses under <strong>Others</strong>. Consider creating more specific categories for better tracking.</p>`
+      );
+    }
+
+    const totalExpenses = expenses.reduce(
+      (sum, e) => sum + (Number(e.amount) || 0),
+      0
+    );
+    html.push(
+      `<p>• Total recorded expenses (all time): <strong>${formatCurrency(
+        totalExpenses
+      )}</strong>.</p>`
+    );
+
+    html.push("</div>");
+    container.innerHTML = html.join("");
+  }
+
+  function initAIPage() {
+    document
+      .getElementById("ai-refresh-btn")
+      .addEventListener("click", renderAIInsights);
+  }
+
+  // ======= Settings (Reset Data) =======
+  function initSettings() {
+    document
+      .getElementById("reset-all-data-btn")
+      .addEventListener("click", () => {
+        if (
+          !confirm(
+            "Reset all data (expenses & budgets)? This cannot be undone."
+          )
+        )
+          return;
+        expenses = [];
+        budgets = [];
+        saveToStorage();
+        updateDashboard();
+        renderExpensesTable();
+        renderBudgetsTable();
+        renderApprovalsTable();
+        renderSummaryChart();
+        renderAIInsights();
+      });
+  }
+
+  // ======= Init App =======
+  document.addEventListener("DOMContentLoaded", () => {
+    loadFromStorage();
+    initTheme();
+    initNavigation();
+    initExpenseForm();
+    initExpenseFilters();
+    initBudgetForm();
+    initApprovals();
+    initSummaryPage();
+    initAIPage();
+    initSettings();
+
+    updateBudgetsUsedAmounts();
+    updateDashboard();
+    renderExpensesTable();
+    renderBudgetsTable();
+    renderApprovalsTable();
+    renderSummaryChart();
+    renderAIInsights();
+  });
+</script>
+</body>
+</html>
